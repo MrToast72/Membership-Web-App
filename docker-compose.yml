@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   membership-verifier:
-    image: ${DOCKER_USERNAME:-mrtoast72}/membership-verifier:latest
+    image: ghcr.io/mrtoast72/membership-web-app:latest
     container_name: membership-verifier
     restart: unless-stopped
     environment:
