@@ -1,0 +1,40 @@
+# Environment files
+.env
+.env.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+__Python/
+venv/
+env/
+
+# Database
+*.db
+*.db-journal
+data/
+backups/
+
+# OS
+.DS_Store
+
+# Excel files (data)
+*.xlsx
+*.xls
+*.xlsm
+
+# Assets (generated)
+app/static/assets/
+Icon.png
+
+# Test
+tests/__pycache__/
+.pytest_cache/
+temp/
+*.log
+
+# IDE
+.vscode/
+.idea/

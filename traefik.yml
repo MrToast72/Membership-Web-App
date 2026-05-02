@@ -1,0 +1,16 @@
+ networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.member-web.rule=Host(`member.cyberconnectit.com`)"
+      - "traefik.http.routers.member-web.entrypoints=websecure"
+      - "traefik.http.routers.member-web.tls.certresolver=cloudflare"
+      - "traefik.http.routers.member-web.middlewares=member-auth"
+      - "traefik.http.middlewares.member-auth.basicauth.users=${TRAEFIK_BASIC_AUTH_USERS:-changeMe:$$2y$$05$$changeMeChangeMeChangeMeChangeMeChangeMeChangeMeChangeMe}"
+      - "traefik.http.services.member-web.loadbalancer.server.port=8000"
+      - "traefik.http.services.member-web.loadbalancer.server.scheme=http"
+
+networks:
+  traefik:
+    external: true

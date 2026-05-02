@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  membership-verifier:
+    image: ${DOCKER_USERNAME:-mrtoast72}/membership-verifier:latest
+    container_name: membership-verifier
+    restart: unless-stopped
+    environment:
+      - SQLITE_DB_PATH=/app/data/membership.db
+      - BACKUP_DIR=/app/backups
+      - MEMBER_BASIC_AUTH_USER=${MEMBER_BASIC_AUTH_USER:-}
+      - MEMBER_BASIC_AUTH_PASS=${MEMBER_BASIC_AUTH_PASS:-}
+    volumes:
+      - ./data:/app/data
+      - ./backups:/app/backups
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.membership.rule=Host(`member.cyberconnectit.com`)"
+      - "traefik.http.routers.membership.entrypoints=websecure"
+      - "traefik.http.routers.membership.tls=true"
+      - "traefik.http.routers.membership.tls.certresolver=cloudflare"
+      - "traefik.http.services.membership.loadbalancer.server.port=8000"
+      - "traefik.http.services.membership.loadbalancer.server.scheme=http"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true

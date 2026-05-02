@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Membership Verifier{% endblock %}
+
+{% block content %}
+<h2>Admin Panel</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">Import Excel</div>
+            <div class="card-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input type="file" class="form-control" id="excelFile" accept=".xlsx,.xlsm">
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="importExcel()">Import</button>
+                </form>
+                <div id="importStatus" class="mt-2"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Scan History</div>
+            <div class="card-body">
+                <a href="/api/scan-history" class="btn btn-secondary mb-2" target="_blank">View JSON</a>
+                <a href="/admin/export-scan-history" class="btn btn-primary" download>Export CSV</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">Members ({{ members|length }})</div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Membership #</th>
+                            <th>Email</th>
+                            <th>Type</th>
+                            <th>Usage</th>
+                            <th>Cart</th>
+                            <th>Range</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in members %}
+                        <tr id="edit-{{ m.id }}">
+                            <td>{{ m.name or 'N/A' }}</td>
+                            <td>{{ m.membership_number or 'N/A' }}</td>
+                            <td>{{ m.email or 'N/A' }}</td>
+                            <td>{{ m.membership_type or 'N/A' }}</td>
+                            <td>{{ m.amount_used or 0 }}</td>
+                            <td>{{ '✓' if m.includes_cart else '✗' }}</td>
+                            <td>{{ '✓' if m.includes_range else '✗' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="editMember({{ m.id }})">Edit</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="mb-3">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-control" id="editName">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Membership #</label>
+                        <input type="text" class="form-control" id="editMembershipNumber">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Membership Type</label>
+                        <input type="text" class="form-control" id="editMembershipType">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount Used</label>
+                        <input type="number" class="form-control" id="editAmountUsed" step="0.01">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="editIncludesCart">
+                        <label class="form-check-label">Includes Cart</label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="editIncludesRange">
+                        <label class="form-check-label">Includes Range</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveMember()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function importExcel() {
+    const fileInput = document.getElementById('excelFile');
+    const status = document.getElementById('importStatus');
+    
+    if (!fileInput.files.length) {
+        status.innerHTML = '<div class="alert alert-warning">Please select a file</div>';
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    status.innerHTML = '<div class="alert alert-info">Importing...</div>';
+    
+    const resp = await fetch('/api/import', {method: 'POST', body: formData});
+    const data = await resp.json();
+    
+    if (data.status === 'success') {
+        status.innerHTML = `<div class="alert alert-success">Import complete: ${JSON.stringify(data.results)}</div>`;
+        setTimeout(() => location.reload(), 2000);
+    } else {
+        status.innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+    }
+}
+
+async function editMember(id) {
+    const resp = await fetch('/api/member/' + id);
+    const m = await resp.json();
+    
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = m.name || '';
+    document.getElementById('editEmail').value = m.email || '';
+    document.getElementById('editMembershipNumber').value = m.membership_number || '';
+    document.getElementById('editMembershipType').value = m.membership_type || '';
+    document.getElementById('editAmountUsed').value = m.amount_used || 0;
+    document.getElementById('editIncludesCart').checked = m.includes_cart;
+    document.getElementById('editIncludesRange').checked = m.includes_range;
+    
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+async function saveMember() {
+    const id = document.getElementById('editId').value;
+    
+    const params = new URLSearchParams();
+    params.append('name', document.getElementById('editName').value);
+    params.append('email', document.getElementById('editEmail').value);
+    params.append('membership_number', document.getElementById('editMembershipNumber').value);
+    params.append('membership_type', document.getElementById('editMembershipType').value);
+    params.append('amount_used', document.getElementById('editAmountUsed').value);
+    params.append('includes_cart', document.getElementById('editIncludesCart').checked);
+    params.append('includes_range', document.getElementById('editIncludesRange').checked);
+    
+    const resp = await fetch('/api/member/' + id + '/edit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: params
+    });
+    
+    const data = await resp.json();
+    if (data.status === 'success') {
+        location.reload();
+    }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#edit-')) {
+        const memberId = hash.replace('#edit-', '');
+        if (memberId) {
+            editMember(parseInt(memberId));
+        }
+    }
+});
+</script>
+{% endblock %}

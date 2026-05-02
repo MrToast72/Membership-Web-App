@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="text-center mb-4">Scan Membership</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <form id="scanForm" onsubmit="return handleScan(event)">
+                    <div class="input-group mb-3">
+                        <input type="text" id="scanInput" class="form-control scan-input" 
+                               placeholder="Scan barcode or enter value..." 
+                               autofocus autocomplete="off">
+                        <button class="btn btn-primary" type="submit">Verify</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="resultPanel" class="mt-4" style="display:none;">
+            <div id="memberCard" class="card member-card">
+                <div class="card-header d-flex justify-content-between align-items-center" id="resultHeader">
+                    <span id="resultTitle"></span>
+                    <button class="btn btn-sm btn-outline-primary" id="editBtn" style="display:none;" onclick="editCurrentMember()">Edit</button>
+                </div>
+                <div class="card-body" id="resultBody"></div>
+            </div>
+        </div>
+
+        <div id="multipleMatches" class="mt-4" style="display:none;">
+            <div class="card">
+                <div class="card-header">Multiple Matches Found</div>
+                <div class="card-body">
+                    <p>Select a member:</p>
+                    <ul class="list-group" id="matchList"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let scanInput = document.getElementById('scanInput');
+let currentMember = null;
+
+function handleScan(e) {
+    e.preventDefault();
+    const value = scanInput.value.trim();
+    if (!value) return false;
+    
+    fetch('/api/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'scan_value=' + encodeURIComponent(value)
+    })
+    .then(r => r.json())
+    .then(data => displayResult(data, value));
+    
+    scanInput.value = '';
+    return false;
+}
+
+function displayResult(data, scanValue) {
+    const panel = document.getElementById('resultPanel');
+    const card = document.getElementById('memberCard');
+    const header = document.getElementById('resultHeader');
+    const title = document.getElementById('resultTitle');
+    const body = document.getElementById('resultBody');
+    const editBtn = document.getElementById('editBtn');
+    const multiPanel = document.getElementById('multipleMatches');
+    
+    multiPanel.style.display = 'none';
+    panel.style.display = 'block';
+    
+    if (data.status === 'verified') {
+        currentMember = data.member;
+        card.className = 'card member-card verified';
+        title.innerHTML = '✓ Verified: ' + (data.member.name || 'Unknown');
+        editBtn.style.display = 'inline-block';
+        body.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Membership #:</strong> ${data.member.membership_number || 'N/A'}</p>
+                    <p><strong>Name:</strong> ${data.member.name || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${data.member.email || 'N/A'}</p>
+                    <p><strong>Type:</strong> ${data.member.membership_type || 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Amount Used:</strong> ${data.member.amount_used || 0}</p>
+                    <p><strong>Includes Cart:</strong> ${data.member.includes_cart ? 'Yes' : 'No'}</p>
+                    <p><strong>Includes Range:</strong> ${data.member.includes_range ? 'Yes' : 'No'}</p>
+                </div>
+            </div>
+        `;
+    } else if (data.status === 'multiple_matches') {
+        currentMember = null;
+        card.className = 'card member-card multiple';
+        title.innerHTML = '⚠ Multiple Matches Found';
+        editBtn.style.display = 'none';
+        body.innerHTML = `<p>Found ${data.members.length} matches for "${scanValue}"</p>`;
+        
+        const list = document.getElementById('matchList');
+        list.innerHTML = '';
+        data.members.forEach(m => {
+            list.innerHTML += `<li class="list-group-item" style="cursor:pointer" onclick="selectMember(${m.id})">${m.name} (${m.membership_number})</li>`;
+        });
+        multiPanel.style.display = 'block';
+    } else {
+        currentMember = null;
+        card.className = 'card member-card not-found';
+        title.innerHTML = '✗ Not Found';
+        editBtn.style.display = 'none';
+        body.innerHTML = `<p>No membership found for "${scanValue}"</p>`;
+    }
+}
+
+function selectMember(memberId) {
+    fetch('/api/member/' + memberId)
+    .then(r => r.json())
+    .then(m => {
+        currentMember = m;
+        displayResult({status: 'verified', member: m}, '');
+    });
+}
+
+function editCurrentMember() {
+    if (currentMember) {
+        window.location.href = '/admin#edit-' + currentMember.id;
+    }
+}
+
+scanInput.focus();
+setInterval(() => scanInput.focus(), 1000);
+{% endblock %}
