@@ -27,7 +27,7 @@ backups/
 
 # Assets (generated)
 app/static/assets/
-Icon.png
+# Icon.png is now tracked for Docker build
 
 # Test
 tests/__pycache__/
