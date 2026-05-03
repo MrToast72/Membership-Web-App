@@ -147,13 +147,12 @@ async def import_excel(file: UploadFile = File(...)):
             print(f"Import error: {error_detail}")
             return JSONResponse({"status": "error", "message": f"Import failed: {str(e)}", "detail": error_detail})
         
+        return JSONResponse({"status": "success", "results": results})
+    finally:
         try:
             os.remove(temp_path)
         except:
             pass
-        
-        return JSONResponse({"status": "success", "results": results})
-    finally:
         conn.close()
 
 @app.get("/api/scan-history")
