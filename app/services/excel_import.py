@@ -125,6 +125,7 @@ def insert_new_member(conn, row_data: Dict[str, Any], source_sheet: str):
     return cursor.lastrowid
 
 def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, Any]:
+    print("VERSION: 2026-05-03-v4 - ProcessExcelFile CALLED")
     wb = load_workbook(filepath, data_only=True)
     results = {"sheets_processed": 0, "members_updated": 0, "members_inserted": 0, "errors": []}
     
