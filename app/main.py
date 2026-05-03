@@ -6,7 +6,7 @@ import sqlite3
 import os
 from pathlib import Path
 
-from app.database import get_connection, init_db, create_backup, add_audit_entry, verify_audit_chain
+from app.database import get_connection, init_db, create_backup, add_audit_entry, verify_audit_chain, acquire_change_lock, release_change_lock
 from app.services.membership_service import (
     find_member_by_scan, update_member_usage, update_member_field,
     get_all_members, get_member_by_id, sanitize_input
