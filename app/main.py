@@ -6,7 +6,7 @@ import sqlite3
 import os
 from pathlib import Path
 
-from app.database import get_connection, init_db, create_backup, add_audit_entry, verify_audit_chain, acquire_change_lock, release_change_lock
+from app.database import get_connection, init_db, create_backup, add_audit_entry, verify_audit_chain
 from app.services.membership_service import (
     find_member_by_scan, update_member_usage, update_member_field,
     get_all_members, get_member_by_id, sanitize_input
@@ -128,27 +128,24 @@ async def import_excel(file: UploadFile = File(...)):
     
     temp_path = f"/tmp/temp_{file.filename}"
     try:
+        content = await file.read()
         with open(temp_path, "wb") as f:
-            f.write(await file.read())
+            f.write(content)
+        print(f"Saved file to {temp_path}, size: {len(content)} bytes")
     except Exception as e:
         return JSONResponse({"status": "error", "message": f"Failed to save file: {str(e)}"})
     
     conn = get_connection()
     try:
-        original_hash = acquire_change_lock()
-        
-        if not verify_change_lock(original_hash):
-            release_change_lock()
-            return JSONResponse({"status": "error", "message": "Database changed during operation"})
-        
         try:
             results = import_excel_file(conn, temp_path)
             add_audit_entry(conn, "excel_import", {"filename": file.filename, "results": results})
+            print(f"Import results: {results}")
         except Exception as e:
-            release_change_lock()
-            return JSONResponse({"status": "error", "message": f"Import failed: {str(e)}"})
-        
-        release_change_lock()
+            import traceback
+            error_detail = traceback.format_exc()
+            print(f"Import error: {error_detail}")
+            return JSONResponse({"status": "error", "message": f"Import failed: {str(e)}", "detail": error_detail})
         
         try:
             os.remove(temp_path)
