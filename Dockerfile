@@ -11,10 +11,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ /app/app/
 COPY generate_icons.py /app/
-COPY Icon.png /app/Icon.png || true
+COPY Icon.png /app/
 
 RUN mkdir -p /app/data /app/backups /app/app/static/assets && \
-    python generate_icons.py /app/Icon.png /app/app/static/assets || true
+    python generate_icons.py /app/Icon.png /app/app/static/assets
 
 EXPOSE 8000
 
