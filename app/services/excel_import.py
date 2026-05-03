@@ -128,9 +128,10 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
     wb = load_workbook(filepath, data_only=True)
     results = {"sheets_processed": 0, "members_updated": 0, "members_inserted": 0, "errors": []}
     
-    for sheet_name in wb.sheetnames:
-        if 'summary' in sheet_name.lower():
-            continue
+        for sheet_name in wb.sheetnames:
+            if 'summary' in sheet_name.lower() or 'total' in sheet_name.lower():
+                print(f"DEBUG: Skipping sheet {sheet_name}")
+                continue
         
         ws = wb[sheet_name]
         headers = []
