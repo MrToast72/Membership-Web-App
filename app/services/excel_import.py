@@ -154,6 +154,12 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
                     field_name = str(headers[idx]).lower().replace(' ', '_')
                     row_data[field_name] = sanitize_cell_value(cell_value)
             
+            # Only process rows that have actual data (at least name or email)
+            has_data = row_data.get('first_name') or row_data.get('last_name') or row_data.get('email')
+            if not has_data:
+                print(f"DEBUG: Skipping row {row_idx} - no meaningful data. Keys: {list(row_data.keys())}")
+                continue
+            
             # Build full name from first/last if not already set
             if not row_data.get('name'):
                 first = row_data.get('first_name', '')
