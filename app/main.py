@@ -181,10 +181,4 @@ async def health_check():
 
 @app.get("/version")
 async def version():
-    import subprocess
-    try:
-        result = subprocess.run(['git', 'log', '--oneline', '-1'], 
-                          capture_output=True, text=True, cwd='/app')
-        return {"version": result.stdout.strip(), "image": "latest"}
-    except:
-        return {"version": "unknown", "image": "latest"}
+    return {"version": "2026-05-03-v3", "commit": "4262b11"}
