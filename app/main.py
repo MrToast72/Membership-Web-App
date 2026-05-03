@@ -178,3 +178,13 @@ async def export_scan_history(request: Request):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/version")
+async def version():
+    import subprocess
+    try:
+        result = subprocess.run(['git', 'log', '--oneline', '-1'], 
+                          capture_output=True, text=True, cwd='/app')
+        return {"version": result.stdout.strip(), "image": "latest"}
+    except:
+        return {"version": "unknown", "image": "latest"}
