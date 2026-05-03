@@ -126,9 +126,12 @@ async def import_excel(file: UploadFile = File(...)):
     
     create_backup()
     
-    temp_path = f"data/temp_{file.filename}"
-    with open(temp_path, "wb") as f:
-        f.write(await file.read())
+    temp_path = f"/tmp/temp_{file.filename}"
+    try:
+        with open(temp_path, "wb") as f:
+            f.write(await file.read())
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"Failed to save file: {str(e)}"})
     
     conn = get_connection()
     try:
@@ -138,12 +141,20 @@ async def import_excel(file: UploadFile = File(...)):
             release_change_lock()
             return JSONResponse({"status": "error", "message": "Database changed during operation"})
         
-        results = import_excel_file(conn, temp_path)
-        add_audit_entry(conn, "excel_import", {"filename": file.filename, "results": results})
+        try:
+            results = import_excel_file(conn, temp_path)
+            add_audit_entry(conn, "excel_import", {"filename": file.filename, "results": results})
+        except Exception as e:
+            release_change_lock()
+            return JSONResponse({"status": "error", "message": f"Import failed: {str(e)}"})
         
         release_change_lock()
         
-        os.remove(temp_path)
+        try:
+            os.remove(temp_path)
+        except:
+            pass
+        
         return JSONResponse({"status": "success", "results": results})
     finally:
         conn.close()
