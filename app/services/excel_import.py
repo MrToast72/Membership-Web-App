@@ -161,6 +161,12 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
                     field_name = col_mapping[idx]
                     row_data[field_name] = sanitize_cell_value(cell_value)
             
+            # Map Excel field names to DB field names
+            if 'membership_amount_used' in row_data:
+                row_data['amount_used'] = row_data.pop('membership_amount_used')
+            if 'membership_number' in row_data:
+                row_data['membership_number'] = row_data.pop('membership_number')
+            
             # Only process rows that have actual data (at least name or email)
             has_data = row_data.get('first_name') or row_data.get('last_name') or row_data.get('email')
             if not has_data:
