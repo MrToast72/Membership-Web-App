@@ -149,6 +149,7 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
         
         results["sheets_processed"] += 1
         row_count = 0
+        first_row_logged = False
         
         for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             row_count += 1
@@ -167,9 +168,22 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
             if 'membership_number' in row_data:
                 row_data['membership_number'] = row_data.pop('membership_number')
             
+            # Build full name from first/last if not already set
+            if not row_data.get('name'):
+                first = row_data.get('first_name', '')
+                last = row_data.get('last_name', '')
+                if first or last:
+                    row_data['name'] = f"{first} {last}".strip()
+            
+            # Log first row of each sheet for debugging
+            if not first_row_logged:
+                print(f"DEBUG: First row in {sheet_name}: {row_data}")
+                first_row_logged = True
+            
             # Only process rows that have actual data (at least name or email)
-            has_data = row_data.get('first_name') or row_data.get('last_name') or row_data.get('email')
+            has_data = row_data.get('name') or row_data.get('email')
             if not has_data:
+                print(f"DEBUG: Skipping row {row_idx} in {sheet_name} - no name/email. row_data: {row_data}")
                 continue
             
             # Build full name from first/last if not already set
