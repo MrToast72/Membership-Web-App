@@ -162,7 +162,11 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
                     row_data['name'] = f"{first} {last}".strip()
             
             if not row_data.get('name') and not row_data.get('email'):
+                print(f"DEBUG: Skipping row {row_idx} - no name or email. row_data keys: {list(row_data.keys())}")
                 continue
+            
+            # Debug output
+            print(f"DEBUG: Processing row {row_idx}: name='{row_data.get('name')}', email='{row_data.get('email')}', membership_number='{row_data.get('membership_number')}'")
             
             if '_first_name' in row_data and '_last_name' in row_data:
                 row_data['first_name'] = row_data.pop('_first_name')
@@ -171,13 +175,18 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
             try:
                 existing_id = find_existing_member(conn, row_data)
                 if existing_id:
+                    print(f"DEBUG: Found existing member {existing_id} for row {row_idx}")
                     updated = merge_member_data(conn, existing_id, row_data)
                     if updated:
                         results["members_updated"] += 1
+                        print(f"DEBUG: Updated member {existing_id}")
                 else:
+                    print(f"DEBUG: Inserting new member for row {row_idx}")
                     insert_new_member(conn, row_data, sheet_name)
                     results["members_inserted"] += 1
             except Exception as e:
+                import traceback
+                print(f"DEBUG: Error on row {row_idx}: {traceback.format_exc()}")
                 results["errors"].append(f"Row {row_idx} in {sheet_name}: {str(e)}")
         
         if progress_callback:
