@@ -154,6 +154,13 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
                     field_name = str(headers[idx]).lower().replace(' ', '_')
                     row_data[field_name] = sanitize_cell_value(cell_value)
             
+            # Build full name from first/last if not already set
+            if not row_data.get('name'):
+                first = row_data.get('first_name', '')
+                last = row_data.get('last_name', '')
+                if first or last:
+                    row_data['name'] = f"{first} {last}".strip()
+            
             if not row_data.get('name') and not row_data.get('email'):
                 continue
             
