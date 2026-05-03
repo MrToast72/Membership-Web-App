@@ -137,7 +137,14 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
         for cell in ws[1]:
             headers.append(cell.value)
         
-        if not headers or not any(headers):
+        # Filter out None headers and create a mapping of col_idx -> field_name
+        col_mapping = {}
+        for idx, h in enumerate(headers):
+            if h is not None:
+                field_name = str(h).lower().replace(' ', '_')
+                col_mapping[idx] = field_name
+        
+        if not col_mapping:
             continue
         
         results["sheets_processed"] += 1
@@ -150,8 +157,8 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
             
             row_data = {}
             for idx, cell_value in enumerate(row):
-                if idx < len(headers) and headers[idx]:
-                    field_name = str(headers[idx]).lower().replace(' ', '_')
+                if idx in col_mapping:
+                    field_name = col_mapping[idx]
                     row_data[field_name] = sanitize_cell_value(cell_value)
             
             # Only process rows that have actual data (at least name or email)
