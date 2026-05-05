@@ -107,7 +107,7 @@ def insert_new_member(conn, row_data: Dict[str, Any], source_sheet: str):
     INSERT INTO members (membership_number, name, first_name, last_name, email, 
                         membership_type, amount_used, includes_cart, includes_range, 
                         source_sheet, last_updated)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         row_data.get('membership_number'),
         name,
@@ -125,13 +125,11 @@ def insert_new_member(conn, row_data: Dict[str, Any], source_sheet: str):
     return cursor.lastrowid
 
 def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, Any]:
-    print("VERSION: 2026-05-03-v4 - ProcessExcelFile CALLED")
     wb = load_workbook(filepath, data_only=True)
     results = {"sheets_processed": 0, "members_updated": 0, "members_inserted": 0, "errors": []}
     
     for sheet_name in wb.sheetnames:
         if 'summary' in sheet_name.lower() or 'total' in sheet_name.lower():
-            print(f"DEBUG: Skipping sheet {sheet_name}")
             continue
         
         ws = wb[sheet_name]
@@ -167,40 +165,18 @@ def import_excel_file(conn, filepath: str, progress_callback=None) -> Dict[str, 
             # Map Excel field names to DB field names
             if 'membership_amount_used' in row_data:
                 row_data['amount_used'] = row_data.pop('membership_amount_used')
-            if 'membership_number' in row_data:
-                row_data['membership_number'] = row_data.pop('membership_number')
-            
+
             # Build full name from first/last if not already set
             if not row_data.get('name'):
                 first = row_data.get('first_name', '')
                 last = row_data.get('last_name', '')
                 if first or last:
                     row_data['name'] = f"{first} {last}".strip()
-            
-            # Log first row of each sheet for debugging
-            if not first_row_logged:
-                print(f"DEBUG: First row in {sheet_name}: {row_data}")
-                first_row_logged = True
-            
+
             # Only process rows that have actual data (at least name or email)
             has_data = row_data.get('name') or row_data.get('email')
             if not has_data:
-                print(f"DEBUG: Skipping row {row_idx} in {sheet_name} - no name/email. row_data: {row_data}")
                 continue
-            
-            # Build full name from first/last if not already set
-            if not row_data.get('name'):
-                first = row_data.get('first_name', '')
-                last = row_data.get('last_name', '')
-                if first or last:
-                    row_data['name'] = f"{first} {last}".strip()
-            
-            if not row_data.get('name') and not row_data.get('email'):
-                continue
-            
-            if '_first_name' in row_data and '_last_name' in row_data:
-                row_data['first_name'] = row_data.pop('_first_name')
-                row_data['last_name'] = row_data.pop('_last_name')
             
             try:
                 existing_id = find_existing_member(conn, row_data)
