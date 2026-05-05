@@ -14,6 +14,12 @@
         .not-found { border-left: 5px solid #dc3545; }
         .multiple { border-left: 5px solid #ffc107; }
         .members-scroll { max-height: 600px; overflow-y: auto; }
+        @media (max-width: 1549.98px) {
+            .members-scroll { overflow-x: auto; }
+        }
+        @media (min-width: 1550px) {
+            .members-scroll { overflow-x: visible; }
+        }
         @media (max-width: 767.98px) {
             .members-scroll { max-height: none; }
             .admin-stack-gap > * + * { margin-top: 1rem; }
