@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import sqlite3
@@ -209,15 +209,25 @@ async def export_members_excel():
 
         grouped = {}
         for member in members:
-            sheet_name = (member.get("membership_type") or "Unassigned")[:31]
+            sheet_name = (member.get("membership_type") or "Unassigned")
+            sheet_name = "".join(ch for ch in sheet_name if ch not in [":", "\\", "/", "?", "*", "[", "]"]).strip() or "Unassigned"
+            sheet_name = sheet_name[:31]
             grouped.setdefault(sheet_name, []).append(member)
 
         if not grouped:
             ws = wb.create_sheet("Members")
             ws.append([label for label, _ in fields])
         else:
+            used_names = set()
             for sheet_name, sheet_members in grouped.items():
-                ws = wb.create_sheet(sheet_name)
+                final_name = sheet_name
+                suffix = 1
+                while final_name in used_names:
+                    base = sheet_name[:28]
+                    final_name = f"{base}_{suffix}"
+                    suffix += 1
+                used_names.add(final_name)
+                ws = wb.create_sheet(final_name)
                 ws.append([label for label, _ in fields])
                 for member in sheet_members:
                     ws.append([
@@ -227,9 +237,8 @@ async def export_members_excel():
 
         buffer = BytesIO()
         wb.save(buffer)
-        buffer.seek(0)
-        return StreamingResponse(
-            buffer,
+        return Response(
+            content=buffer.getvalue(),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": 'attachment; filename="members_export.xlsx"', "Cache-Control": "no-store"},
         )
