@@ -1,11 +1,10 @@
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
-from starlette.background import BackgroundTask
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import sqlite3
 import os
-import tempfile
+from io import BytesIO
 from pathlib import Path
 from openpyxl import Workbook
 
@@ -190,7 +189,6 @@ async def export_scan_history(request: Request):
 @app.get("/admin/export-members-excel")
 async def export_members_excel():
     conn = get_connection()
-    temp_path = None
     try:
         members = get_all_members(conn)
         wb = Workbook()
@@ -227,18 +225,14 @@ async def export_members_excel():
                         for _, key in fields
                     ])
 
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-        temp_path = temp.name
-        temp.close()
-        wb.save(temp_path)
-        response = FileResponse(
-            path=temp_path,
-            filename="members_export.xlsx",
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": 'attachment; filename="members_export.xlsx"', "Cache-Control": "no-store"},
         )
-        response.headers["Cache-Control"] = "no-store"
-        response.background = BackgroundTask(lambda: os.path.exists(temp_path) and os.remove(temp_path))
-        return response
     finally:
         conn.close()
 
