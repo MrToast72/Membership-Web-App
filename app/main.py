@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 import sqlite3
 import os
 from io import BytesIO
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from openpyxl import Workbook
 
@@ -20,6 +21,16 @@ app = FastAPI(title="Membership Verifier")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+def format_currency(value):
+    if value in (None, "", "N/A"):
+        return "N/A"
+    try:
+        return f"${Decimal(str(value)):.2f}"
+    except (InvalidOperation, ValueError, TypeError):
+        return "N/A"
+
+templates.env.filters["currency"] = format_currency
 
 @app.on_event("startup")
 async def startup_event():

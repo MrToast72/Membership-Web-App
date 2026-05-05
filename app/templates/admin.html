@@ -64,7 +64,7 @@
                             <tr id="edit-{{ m.id }}">
                                 <td>{{ m.name or 'N/A' }}</td>
                                 <td>{{ m.membership_number or 'N/A' }}</td>
-                                <td>{{ '$%.2f'|format(m.price_paid) if m.price_paid is not none else 'N/A' }}</td>
+                                <td>{{ m.price_paid|currency }}</td>
                                 <td>{{ m.paid_via or 'N/A' }}</td>
                                 <td>{{ m.email or 'N/A' }}</td>
                                 <td>{{ m.membership_type or 'N/A' }}</td>
