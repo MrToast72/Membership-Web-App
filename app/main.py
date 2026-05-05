@@ -96,12 +96,6 @@ async def edit_member(member_id: int, request: Request):
     form = await request.form()
     conn = get_connection()
     try:
-        original_hash = acquire_change_lock()
-        
-        if not verify_change_lock(original_hash):
-            release_change_lock()
-            return JSONResponse({"status": "error", "message": "Database changed during operation"})
-        
         for field in ['name', 'email', 'membership_number', 'membership_type', 'amount_used']:
             if field in form:
                 value = sanitize_input(form[field])
@@ -114,7 +108,6 @@ async def edit_member(member_id: int, request: Request):
             update_member_field(conn, member_id, bool_field, value)
         
         add_audit_entry(conn, "member_edited", {"member_id": member_id, "changes": dict(form)})
-        release_change_lock()
         return JSONResponse({"status": "success"})
     finally:
         conn.close()

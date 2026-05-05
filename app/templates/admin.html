@@ -1,13 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Panel - Membership Verifier{% endblock %}
+{% block title %}Admin Panel - Aspen Membership Verifier{% endblock %}
 
 {% block content %}
-<h2>Admin Panel</h2>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h2 class="mb-1">Admin Panel</h2>
+        <div class="text-muted">Import Excel, review members, and inspect scan history.</div>
+    </div>
+</div>
 
 <div class="row">
     <div class="col-md-4">
-        <div class="card mb-3">
+        <div class="card mb-3 shadow-sm border-0">
             <div class="card-header">Import Excel</div>
             <div class="card-body">
                 <form id="importForm" enctype="multipart/form-data">
@@ -20,50 +25,53 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card shadow-sm border-0">
             <div class="card-header">Scan History</div>
             <div class="card-body">
-                <a href="/api/scan-history" class="btn btn-secondary mb-2" target="_blank">View JSON</a>
-                <a href="/admin/export-scan-history" class="btn btn-primary" download>Export CSV</a>
+                <div class="d-flex flex-wrap gap-2 align-items-stretch">
+                    <a href="/api/scan-history" class="btn btn-secondary" target="_blank">View JSON</a>
+                    <a href="/admin/export-scan-history" class="btn btn-primary" download>Export CSV</a>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="col-md-8">
-        <div class="card">
+        <div class="card shadow-sm border-0">
             <div class="card-header">Members ({{ members|length }})</div>
-            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                <table class="table table-sm table-hover">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Membership #</th>
-                            <th>Email</th>
-                            <th>Type</th>
-                            <th>Usage</th>
-                            <th>Cart</th>
-                            <th>Range</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for m in members %}
-                        <tr id="edit-{{ m.id }}">
-                            <td>{{ m.name or 'N/A' }}</td>
-                            <td>{{ m.membership_number or 'N/A' }}</td>
-                            <td>{{ m.email or 'N/A' }}</td>
-                            <td>{{ m.membership_type or 'N/A' }}</td>
-                            <td>{{ m.amount_used or 0 }}</td>
-                            <td>{{ '✓' if m.includes_cart else '✗' }}</td>
-                            <td>{{ '✓' if m.includes_range else '✗' }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        onclick="editMember({{ m.id }})">Edit</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Membership #</th>
+                                <th>Email</th>
+                                <th>Type</th>
+                                <th>Usage</th>
+                                <th>Cart</th>
+                                <th>Range</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in members %}
+                            <tr id="edit-{{ m.id }}">
+                                <td>{{ m.name or 'N/A' }}</td>
+                                <td>{{ m.membership_number or 'N/A' }}</td>
+                                <td>{{ m.email or 'N/A' }}</td>
+                                <td>{{ m.membership_type or 'N/A' }}</td>
+                                <td>{{ m.amount_used or 0 }}</td>
+                                <td>{{ '✓' if m.includes_cart else '✗' }}</td>
+                                <td>{{ '✓' if m.includes_range else '✗' }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editMember({{ m.id }})">Edit</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

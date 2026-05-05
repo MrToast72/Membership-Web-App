@@ -2,24 +2,29 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <h2 class="text-center mb-4">Scan Membership</h2>
+    <div class="col-12 col-xl-9">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h2 class="mb-1">Scan Membership</h2>
+                <div class="text-muted">Type a name, email, or membership number and press Enter.</div>
+            </div>
+        </div>
         
-        <div class="card">
-            <div class="card-body">
-                <form id="scanForm" onsubmit="return handleScan(event)">
-                    <div class="input-group mb-3">
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-body p-3 p-md-4">
+                <form id="scanForm">
+                    <div class="input-group input-group-lg">
                         <input type="text" id="scanInput" class="form-control scan-input" 
                                placeholder="Scan barcode or enter value..." 
                                autofocus autocomplete="off">
-                        <button class="btn btn-primary" type="submit">Verify</button>
+                        <button class="btn btn-primary px-4" type="submit">Verify</button>
                     </div>
                 </form>
             </div>
         </div>
 
         <div id="resultPanel" class="mt-4" style="display:none;">
-            <div id="memberCard" class="card member-card">
+            <div id="memberCard" class="card member-card shadow-sm border-0">
                 <div class="card-header d-flex justify-content-between align-items-center" id="resultHeader">
                     <span id="resultTitle"></span>
                     <button class="btn btn-sm btn-outline-primary" id="editBtn" style="display:none;" onclick="editCurrentMember()">Edit</button>
@@ -45,6 +50,9 @@
 <script>
 let scanInput = document.getElementById('scanInput');
 let currentMember = null;
+let scanForm = document.getElementById('scanForm');
+
+scanForm.addEventListener('submit', handleScan);
 
 function handleScan(e) {
     e.preventDefault();
@@ -57,7 +65,8 @@ function handleScan(e) {
         body: 'scan_value=' + encodeURIComponent(value)
     })
     .then(r => r.json())
-    .then(data => displayResult(data, value));
+    .then(data => displayResult(data, value))
+    .catch(() => displayResult({status: 'error', message: 'Unable to verify membership.'}, value));
     
     scanInput.value = '';
     return false;
@@ -77,8 +86,8 @@ function displayResult(data, scanValue) {
     
     if (data.status === 'verified') {
         currentMember = data.member;
-        card.className = 'card member-card verified';
-        title.innerHTML = '✓ Verified: ' + (data.member.name || 'Unknown');
+        card.className = 'card member-card verified shadow-sm border-0';
+        title.innerHTML = 'Verified';
         editBtn.style.display = 'inline-block';
         body.innerHTML = `
             <div class="row">
@@ -97,24 +106,33 @@ function displayResult(data, scanValue) {
         `;
     } else if (data.status === 'multiple_matches') {
         currentMember = null;
-        card.className = 'card member-card multiple';
-        title.innerHTML = '⚠ Multiple Matches Found';
+        card.className = 'card member-card multiple shadow-sm border-0';
+        title.innerHTML = 'Multiple Matches Found';
         editBtn.style.display = 'none';
-        body.innerHTML = `<p>Found ${data.members.length} matches for "${scanValue}"</p>`;
+        const members = data.members || data.multiple || [];
+        body.innerHTML = `<p>Found ${members.length} matches for "${scanValue}"</p>`;
         
         const list = document.getElementById('matchList');
         list.innerHTML = '';
-        data.members.forEach(m => {
+        members.forEach(m => {
             list.innerHTML += `<li class="list-group-item" style="cursor:pointer" onclick="selectMember(${m.id})">${m.name} (${m.membership_number})</li>`;
         });
         multiPanel.style.display = 'block';
+    } else if (data.status === 'error') {
+        currentMember = null;
+        card.className = 'card member-card not-found shadow-sm border-0';
+        title.innerHTML = 'Error';
+        editBtn.style.display = 'none';
+        body.innerHTML = `<p>${data.message || 'Unable to verify membership.'}</p>`;
     } else {
         currentMember = null;
-        card.className = 'card member-card not-found';
-        title.innerHTML = '✗ Not Found';
+        card.className = 'card member-card not-found shadow-sm border-0';
+        title.innerHTML = 'Not Found';
         editBtn.style.display = 'none';
         body.innerHTML = `<p>No membership found for "${scanValue}"</p>`;
     }
+
+    scanInput.focus();
 }
 
 function selectMember(memberId) {
@@ -134,4 +152,5 @@ function editCurrentMember() {
 
 scanInput.focus();
 setInterval(() => scanInput.focus(), 1000);
+</script>
 {% endblock %}

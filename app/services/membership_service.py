@@ -46,9 +46,8 @@ def parse_name(name: str) -> Tuple[Optional[str], Optional[str]]:
 
 def find_member_by_scan(conn, scan_value: str) -> Dict[str, Any]:
     cursor = conn.cursor()
-    results = []
-    
     scan_value = sanitize_input(scan_value.strip())
+    like_value = f"%{scan_value}%"
     
     cursor.execute("SELECT * FROM members WHERE membership_number = ?", (scan_value,))
     row = cursor.fetchone()
@@ -75,8 +74,18 @@ def find_member_by_scan(conn, scan_value: str) -> Dict[str, Any]:
             return {"status": "verified", "member": dict(rows[0]), "multiple": []}
         elif len(rows) > 1:
             return {"status": "multiple_matches", "member": None, "multiple": [dict(r) for r in rows]}
-    
-    cursor.execute("SELECT * FROM members WHERE name LIKE ?", (f"%{scan_value}%",))
+
+    cursor.execute(
+        """
+        SELECT * FROM members
+        WHERE name LIKE ? COLLATE NOCASE
+           OR first_name LIKE ? COLLATE NOCASE
+           OR last_name LIKE ? COLLATE NOCASE
+           OR email LIKE ? COLLATE NOCASE
+           OR membership_number LIKE ? COLLATE NOCASE
+        """,
+        (like_value, like_value, like_value, like_value, like_value)
+    )
     rows = cursor.fetchall()
     if len(rows) == 1:
         return {"status": "verified", "member": dict(rows[0]), "multiple": []}
