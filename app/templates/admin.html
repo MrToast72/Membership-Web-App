@@ -2,6 +2,8 @@
 
 {% block title %}Admin Panel - Aspen Membership Verifier{% endblock %}
 
+{% block container_class %}container-fluid mt-4 px-3 px-xl-4{% endblock %}
+
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
@@ -31,6 +33,7 @@
                 <div class="d-flex flex-wrap gap-2 align-items-stretch">
                     <a href="/api/scan-history" class="btn btn-secondary" target="_blank">View JSON</a>
                     <a href="/admin/export-scan-history" class="btn btn-primary" download>Export CSV</a>
+                    <a href="/admin/export-members-excel" class="btn btn-success" download>Export Excel</a>
                 </div>
             </div>
         </div>
@@ -40,7 +43,7 @@
         <div class="card shadow-sm border-0">
             <div class="card-header">Members ({{ members|length }})</div>
             <div class="card-body">
-                <div class="table-responsive-lg members-scroll">
+                <div class="members-scroll">
                     <table class="table table-sm table-hover align-middle mb-0">
                         <thead>
                             <tr>

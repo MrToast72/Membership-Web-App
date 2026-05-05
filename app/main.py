@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, FileResponse
+from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import sqlite3
 import os
+import tempfile
 from pathlib import Path
+from openpyxl import Workbook
 
 from app.database import get_connection, init_db, create_backup, add_audit_entry, verify_audit_chain
 from app.services.membership_service import (
@@ -183,6 +186,61 @@ async def export_scan_history(request: Request):
         filename="scan_history.csv",
         media_type="text/csv"
     )
+
+@app.get("/admin/export-members-excel")
+async def export_members_excel():
+    conn = get_connection()
+    temp_path = None
+    try:
+        members = get_all_members(conn)
+        wb = Workbook()
+        default_sheet = wb.active
+        wb.remove(default_sheet)
+
+        fields = [
+            ("Name", "name"),
+            ("Membership #", "membership_number"),
+            ("Email", "email"),
+            ("Membership Type", "membership_type"),
+            ("Price Paid", "price_paid"),
+            ("Paid Via", "paid_via"),
+            ("Amount Used", "amount_used"),
+            ("Includes Cart", "includes_cart"),
+            ("Includes Range", "includes_range"),
+        ]
+
+        grouped = {}
+        for member in members:
+            sheet_name = (member.get("membership_type") or "Unassigned")[:31]
+            grouped.setdefault(sheet_name, []).append(member)
+
+        if not grouped:
+            ws = wb.create_sheet("Members")
+            ws.append([label for label, _ in fields])
+        else:
+            for sheet_name, sheet_members in grouped.items():
+                ws = wb.create_sheet(sheet_name)
+                ws.append([label for label, _ in fields])
+                for member in sheet_members:
+                    ws.append([
+                        member.get(key) if member.get(key) is not None else ""
+                        for _, key in fields
+                    ])
+
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+        temp_path = temp.name
+        temp.close()
+        wb.save(temp_path)
+        response = FileResponse(
+            path=temp_path,
+            filename="members_export.xlsx",
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response.headers["Cache-Control"] = "no-store"
+        response.background = BackgroundTask(lambda: os.path.exists(temp_path) and os.remove(temp_path))
+        return response
+    finally:
+        conn.close()
 
 @app.get("/health")
 async def health_check():

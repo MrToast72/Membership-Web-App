@@ -13,12 +13,19 @@
         .verified { border-left: 5px solid #28a745; }
         .not-found { border-left: 5px solid #dc3545; }
         .multiple { border-left: 5px solid #ffc107; }
-        .members-scroll { max-height: 600px; overflow-y: auto; }
+        .members-scroll { max-height: 600px; overflow-y: auto; overflow-x: visible; }
         @media (max-width: 1549.98px) {
             .members-scroll { overflow-x: auto; }
         }
         @media (min-width: 1550px) {
-            .members-scroll { overflow-x: visible; }
+            .members-scroll {
+                overflow-x: visible;
+            }
+            .members-scroll table {
+                width: 100%;
+                min-width: 0;
+                table-layout: auto;
+            }
         }
         @media (max-width: 767.98px) {
             .members-scroll { max-height: none; }
@@ -39,7 +46,7 @@
             </div>
         </div>
     </nav>
-    <div class="container mt-4">
+    <div class="{% block container_class %}container mt-4{% endblock %}">
         {% block content %}{% endblock %}
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
