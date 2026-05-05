@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate app icons from source Icon.png
+Generate app icons from source GoldIcon.png
 Creates PNG and ICO versions with proper aspect ratio and padding
 """
 import sys
@@ -84,7 +84,7 @@ def generate_icons(source_path, output_dir):
     return True
 
 if __name__ == '__main__':
-    source = Path(__file__).parent / 'Icon.png'
+    source = Path(__file__).parent / 'GoldIcon.png'
     output = Path(__file__).parent / 'app' / 'static' / 'assets'
     
     if len(sys.argv) > 1:
