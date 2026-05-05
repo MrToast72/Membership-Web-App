@@ -92,6 +92,8 @@ def init_db():
         last_name TEXT,
         email TEXT,
         membership_type TEXT,
+        price_paid REAL,
+        paid_via TEXT,
         amount_used REAL DEFAULT 0,
         includes_cart INTEGER DEFAULT 0,
         includes_range INTEGER DEFAULT 0,
@@ -99,6 +101,13 @@ def init_db():
         last_updated TEXT
     )
     """)
+
+    cursor.execute("PRAGMA table_info(members)")
+    existing_columns = {row["name"] for row in cursor.fetchall()}
+    if "price_paid" not in existing_columns:
+        cursor.execute("ALTER TABLE members ADD COLUMN price_paid REAL")
+    if "paid_via" not in existing_columns:
+        cursor.execute("ALTER TABLE members ADD COLUMN paid_via TEXT")
     
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_membership_number ON members(membership_number)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_email ON members(email)")

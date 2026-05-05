@@ -49,13 +49,8 @@ async def verify_member(request: Request):
         
         if result["status"] == "verified":
             member = result["member"]
-            update_member_usage(conn, member["id"])
-            log_scan(conn, scan_value, "verified", member["id"], member)
-            add_audit_entry(conn, "scan_verified", {"member_id": member["id"], "scan_value": scan_value})
-            return JSONResponse({
-                "status": "verified",
-                "member": member
-            })
+            member = increment_member_usage(conn, member, scan_value)
+            return JSONResponse({"status": "verified", "member": member})
         elif result["status"] == "multiple_matches":
             log_scan(conn, scan_value, "multiple_matches")
             return JSONResponse({
@@ -67,6 +62,13 @@ async def verify_member(request: Request):
             return JSONResponse({"status": "not_found"})
     finally:
         conn.close()
+
+def increment_member_usage(conn, member, scan_value):
+    update_member_usage(conn, member["id"])
+    refreshed = get_member_by_id(conn, member["id"])
+    log_scan(conn, scan_value, "verified", member["id"], refreshed or member)
+    add_audit_entry(conn, "scan_verified", {"member_id": member["id"], "scan_value": scan_value})
+    return refreshed or member
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(request: Request):
@@ -88,6 +90,20 @@ async def get_member(member_id: int):
         if member:
             return JSONResponse(member)
         return JSONResponse({"status": "error", "message": "Member not found"}, status_code=404)
+    finally:
+        conn.close()
+
+@app.post("/api/member/{member_id}/verify")
+async def verify_member_selection(member_id: int, request: Request):
+    form = await request.form()
+    scan_value = form.get("scan_value", "").strip()
+    conn = get_connection()
+    try:
+        member = get_member_by_id(conn, member_id)
+        if not member:
+            return JSONResponse({"status": "error", "message": "Member not found"}, status_code=404)
+        member = increment_member_usage(conn, member, scan_value or member.get("name") or "")
+        return JSONResponse({"status": "verified", "member": member})
     finally:
         conn.close()
 

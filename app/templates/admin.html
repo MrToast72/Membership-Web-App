@@ -10,8 +10,8 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4">
+<div class="row admin-stack-gap">
+    <div class="col-md-4 mb-3 mb-md-0">
         <div class="card mb-3 shadow-sm border-0">
             <div class="card-header">Import Excel</div>
             <div class="card-body">
@@ -25,7 +25,7 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0">
+        <div class="card mb-3 mb-md-0 shadow-sm border-0">
             <div class="card-header">Scan History</div>
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2 align-items-stretch">
@@ -40,12 +40,14 @@
         <div class="card shadow-sm border-0">
             <div class="card-header">Members ({{ members|length }})</div>
             <div class="card-body">
-                <div class="table-responsive-lg">
+                <div class="table-responsive-lg members-scroll">
                     <table class="table table-sm table-hover align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Membership #</th>
+                                <th>Price Paid</th>
+                                <th>Paid Via</th>
                                 <th>Email</th>
                                 <th>Type</th>
                                 <th>Usage</th>
@@ -59,6 +61,8 @@
                             <tr id="edit-{{ m.id }}">
                                 <td>{{ m.name or 'N/A' }}</td>
                                 <td>{{ m.membership_number or 'N/A' }}</td>
+                                <td>{{ m.price_paid if m.price_paid is not none else 'N/A' }}</td>
+                                <td>{{ m.paid_via or 'N/A' }}</td>
                                 <td>{{ m.email or 'N/A' }}</td>
                                 <td>{{ m.membership_type or 'N/A' }}</td>
                                 <td>{{ m.amount_used or 0 }}</td>

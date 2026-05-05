@@ -72,7 +72,7 @@ def merge_member_data(conn, member_id: int, row_data: Dict[str, Any]):
         email = None
     
     for field in ['membership_number', 'name', 'first_name', 'last_name', 'email', 
-                  'membership_type', 'includes_cart', 'includes_range']:
+                  'membership_type', 'price_paid', 'paid_via', 'includes_cart', 'includes_range']:
         value = email if field == 'email' else row_data.get(field)
         if field in row_data or (field == 'email' and email):
             if not existing.get(field) and value:
@@ -105,9 +105,9 @@ def insert_new_member(conn, row_data: Dict[str, Any], source_sheet: str):
     
     cursor.execute("""
     INSERT INTO members (membership_number, name, first_name, last_name, email, 
-                        membership_type, amount_used, includes_cart, includes_range, 
+                        membership_type, price_paid, paid_via, amount_used, includes_cart, includes_range, 
                         source_sheet, last_updated)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         row_data.get('membership_number'),
         name,
@@ -115,6 +115,8 @@ def insert_new_member(conn, row_data: Dict[str, Any], source_sheet: str):
         row_data.get('last_name'),
         email,
         row_data.get('membership_type'),
+        row_data.get('price_paid'),
+        row_data.get('paid_via'),
         float(amount_used) if amount_used else 0,
         convert_bool_value(row_data.get('includes_cart', False)),
         convert_bool_value(row_data.get('includes_range', False)),

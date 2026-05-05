@@ -51,12 +51,14 @@
 let scanInput = document.getElementById('scanInput');
 let currentMember = null;
 let scanForm = document.getElementById('scanForm');
+let lastScanValue = '';
 
 scanForm.addEventListener('submit', handleScan);
 
 function handleScan(e) {
     e.preventDefault();
     const value = scanInput.value.trim();
+    lastScanValue = value;
     if (!value) return false;
     
     fetch('/api/verify', {
@@ -136,11 +138,17 @@ function displayResult(data, scanValue) {
 }
 
 function selectMember(memberId) {
-    fetch('/api/member/' + memberId)
+    fetch('/api/member/' + memberId + '/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'scan_value=' + encodeURIComponent(lastScanValue)
+    })
     .then(r => r.json())
-    .then(m => {
-        currentMember = m;
-        displayResult({status: 'verified', member: m}, '');
+    .then(data => {
+        if (data.status === 'verified') {
+            currentMember = data.member;
+            displayResult(data, '');
+        }
     });
 }
 
